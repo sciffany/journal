@@ -38,19 +38,21 @@ export default async function TypePage({ params, searchParams }: PageProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Icon className="h-6 w-6 text-neutral-500" />
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {typeInfo.label}
-          </h1>
+      <div className="flex items-start justify-between gap-3 sm:items-center">
+        <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <Icon className="h-5 w-5 shrink-0 text-neutral-500 sm:h-6 sm:w-6" />
+            <h1 className="truncate text-xl font-semibold tracking-tight sm:text-2xl">
+              {typeInfo.label}
+            </h1>
+          </div>
           <span className="text-sm text-neutral-500 dark:text-neutral-400">
             {total === 0
               ? "0 entries"
               : `${from}–${to} of ${total} ${total === 1 ? "entry" : "entries"}`}
           </span>
         </div>
-        <Button asChild>
+        <Button asChild className="shrink-0">
           <Link href={`/${type}/new`}>
             <Plus className="h-4 w-4" /> New
           </Link>

@@ -67,41 +67,103 @@ export function EntryGrid({ entries }: { entries: Entry[] }) {
   }
 
   return (
-    <div className="rounded-lg border border-neutral-200 dark:border-neutral-800">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <SortableHead
-              label="Date"
-              active={sortKey === "date"}
-              dir={sortDir}
-              onClick={() => toggleSort("date")}
-              className="w-32"
-            />
-            <SortableHead
-              label="Title"
-              active={sortKey === "title"}
-              dir={sortDir}
-              onClick={() => toggleSort("title")}
-              className="w-64"
-            />
-            <TableHead>Preview</TableHead>
-            <SortableHead
-              label="Updated"
-              active={sortKey === "updatedAt"}
-              dir={sortDir}
-              onClick={() => toggleSort("updatedAt")}
-              className="w-32"
-            />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {sorted.map((entry) => (
-            <RowLink key={entry.id} entry={entry} />
-          ))}
-        </TableBody>
-      </Table>
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-1 md:hidden">
+        <span className="mr-1 text-xs text-neutral-500 dark:text-neutral-400">
+          Sort
+        </span>
+        {(
+          [
+            ["date", "Date"],
+            ["title", "Title"],
+            ["updatedAt", "Updated"],
+          ] as const
+        ).map(([key, label]) => (
+          <SortChip
+            key={key}
+            label={label}
+            active={sortKey === key}
+            dir={sortDir}
+            onClick={() => toggleSort(key)}
+          />
+        ))}
+      </div>
+
+      <ul className="divide-y divide-neutral-200 rounded-lg border border-neutral-200 md:hidden dark:divide-neutral-800 dark:border-neutral-800">
+        {sorted.map((entry) => (
+          <MobileEntryCard key={entry.id} entry={entry} />
+        ))}
+      </ul>
+
+      <div className="hidden rounded-lg border border-neutral-200 md:block dark:border-neutral-800">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <SortableHead
+                label="Date"
+                active={sortKey === "date"}
+                dir={sortDir}
+                onClick={() => toggleSort("date")}
+                className="w-32"
+              />
+              <SortableHead
+                label="Title"
+                active={sortKey === "title"}
+                dir={sortDir}
+                onClick={() => toggleSort("title")}
+                className="w-64"
+              />
+              <TableHead>Preview</TableHead>
+              <SortableHead
+                label="Updated"
+                active={sortKey === "updatedAt"}
+                dir={sortDir}
+                onClick={() => toggleSort("updatedAt")}
+                className="w-32"
+              />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sorted.map((entry) => (
+              <RowLink key={entry.id} entry={entry} />
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
+  );
+}
+
+function SortChip({
+  label,
+  active,
+  dir,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  dir: SortDir;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs transition-colors",
+        active
+          ? "bg-neutral-200/80 font-medium text-neutral-900 dark:bg-neutral-800 dark:text-neutral-50"
+          : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-900",
+      )}
+    >
+      {label}
+      {active &&
+        (dir === "asc" ? (
+          <ArrowUp className="h-3 w-3" />
+        ) : (
+          <ArrowDown className="h-3 w-3" />
+        ))}
+    </button>
   );
 }
 
@@ -137,6 +199,46 @@ function SortableHead({
           ))}
       </button>
     </TableHead>
+  );
+}
+
+function MobileEntryCard({ entry }: { entry: Entry }) {
+  const href = `/${entry.type}/${entry.id}`;
+  const preview = (entry.body ?? "").replace(/\s+/g, " ").trim();
+  const stars =
+    entry.type === "ratings" ? getStarsFromMetadata(entry.metadata) : null;
+
+  return (
+    <li>
+      <Link href={href} className="block px-4 py-3.5 active:bg-neutral-50 dark:active:bg-neutral-900">
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="min-w-0 truncate font-medium">
+            {entry.title || (
+              <span className="text-neutral-400 dark:text-neutral-500">
+                (untitled)
+              </span>
+            )}
+          </span>
+          <span className="shrink-0 text-xs tabular-nums text-neutral-500 dark:text-neutral-400">
+            {format(entry.date, "MMM d")}
+          </span>
+        </div>
+        <div className="mt-1 flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
+          {stars != null && (
+            <span className="tabular-nums text-amber-600 dark:text-amber-400">
+              {stars}/{RATING_MAX}
+            </span>
+          )}
+          <span className="truncate">
+            {preview || (
+              <span className="text-neutral-300 dark:text-neutral-600">
+                (empty)
+              </span>
+            )}
+          </span>
+        </div>
+      </Link>
+    </li>
   );
 }
 

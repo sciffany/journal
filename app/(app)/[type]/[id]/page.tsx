@@ -28,7 +28,7 @@ export default async function EntryPage({ params }: PageProps) {
         >
           &larr; Back to {typeInfo.label}
         </Link>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight">
+        <h1 className="mt-2 break-words text-xl font-semibold tracking-tight sm:text-2xl">
           {entry.title || "Untitled entry"}
         </h1>
       </div>

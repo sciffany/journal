@@ -26,7 +26,7 @@ export default async function NewEntryPage({ params }: PageProps) {
         >
           &larr; Back to {typeInfo.label}
         </Link>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight">
+        <h1 className="mt-2 text-xl font-semibold tracking-tight sm:text-2xl">
           New {typeInfo.label} entry
         </h1>
       </div>

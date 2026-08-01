@@ -16,20 +16,20 @@ export function Pagination({ page, totalPages, hrefForPage }: Props) {
 
   return (
     <nav
-      className="flex items-center justify-between gap-4"
+      className="flex items-center justify-between gap-2 sm:gap-4"
       aria-label="Pagination"
     >
       {prev ? (
         <Button asChild variant="outline" size="sm">
           <Link href={prev}>
             <ChevronLeft className="h-4 w-4" />
-            Previous
+            <span className="hidden sm:inline">Previous</span>
           </Link>
         </Button>
       ) : (
         <Button variant="outline" size="sm" disabled>
           <ChevronLeft className="h-4 w-4" />
-          Previous
+          <span className="hidden sm:inline">Previous</span>
         </Button>
       )}
 
@@ -47,13 +47,13 @@ export function Pagination({ page, totalPages, hrefForPage }: Props) {
       {next ? (
         <Button asChild variant="outline" size="sm">
           <Link href={next}>
-            Next
+            <span className="hidden sm:inline">Next</span>
             <ChevronRight className="h-4 w-4" />
           </Link>
         </Button>
       ) : (
         <Button variant="outline" size="sm" disabled>
-          Next
+          <span className="hidden sm:inline">Next</span>
           <ChevronRight className="h-4 w-4" />
         </Button>
       )}

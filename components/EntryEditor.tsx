@@ -83,7 +83,7 @@ export function EntryEditor({ entry }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-[1fr_auto] gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto]">
         <div className="space-y-1.5">
           <label htmlFor="title" className="text-xs font-medium">
             Title
@@ -95,7 +95,7 @@ export function EntryEditor({ entry }: Props) {
             placeholder="(no title)"
           />
         </div>
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 sm:w-44">
           <label htmlFor="date" className="text-xs font-medium">
             Date
           </label>
@@ -124,8 +124,8 @@ export function EntryEditor({ entry }: Props) {
           id="body"
           value={body}
           onChange={(e) => setBody(e.target.value)}
-          rows={16}
-          className="min-h-[300px] font-sans leading-relaxed"
+          rows={12}
+          className="min-h-[200px] font-sans leading-relaxed sm:min-h-[300px]"
         />
       </div>
 
@@ -152,19 +152,29 @@ export function EntryEditor({ entry }: Props) {
         <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
       )}
 
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
         <Button
           variant="destructive"
           onClick={handleDelete}
           disabled={pending}
+          className="w-full sm:w-auto"
         >
           Delete
         </Button>
         <div className="flex gap-2">
-          <Button variant="outline" asChild disabled={pending}>
+          <Button
+            variant="outline"
+            asChild
+            disabled={pending}
+            className="flex-1 sm:flex-none"
+          >
             <Link href={listHref}>Cancel</Link>
           </Button>
-          <Button onClick={handleSave} disabled={pending}>
+          <Button
+            onClick={handleSave}
+            disabled={pending}
+            className="flex-1 sm:flex-none"
+          >
             {pending ? "Saving..." : "Save"}
           </Button>
         </div>

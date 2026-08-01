@@ -54,7 +54,7 @@ export function NewEntryForm({ type, defaultDate, placeholder }: Props) {
     <form action={handleSubmit} className="space-y-4">
       <input type="hidden" name="type" value={type} />
 
-      <div className="grid grid-cols-[1fr_auto] gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto]">
         <div className="space-y-1.5">
           <label htmlFor="title" className="text-xs font-medium">
             Title
@@ -66,7 +66,7 @@ export function NewEntryForm({ type, defaultDate, placeholder }: Props) {
             autoFocus
           />
         </div>
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 sm:w-44">
           <label htmlFor="date" className="text-xs font-medium">
             Date
           </label>
@@ -95,8 +95,8 @@ export function NewEntryForm({ type, defaultDate, placeholder }: Props) {
         <Textarea
           id="body"
           name="body"
-          rows={16}
-          className="min-h-[300px] leading-relaxed"
+          rows={12}
+          className="min-h-[200px] leading-relaxed sm:min-h-[300px]"
         />
       </div>
 
@@ -129,11 +129,16 @@ export function NewEntryForm({ type, defaultDate, placeholder }: Props) {
 
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
-      <div className="flex justify-end gap-2">
-        <Button variant="outline" asChild disabled={pending}>
+      <div className="flex gap-2 sm:justify-end">
+        <Button
+          variant="outline"
+          asChild
+          disabled={pending}
+          className="flex-1 sm:flex-none"
+        >
           <Link href={`/${type}`}>Cancel</Link>
         </Button>
-        <Button type="submit" disabled={pending}>
+        <Button type="submit" disabled={pending} className="flex-1 sm:flex-none">
           {pending ? "Saving..." : "Save"}
         </Button>
       </div>
