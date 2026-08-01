@@ -32,7 +32,7 @@ jobs:
           # Neon is on Postgres 18; Ubuntu's default postgresql-client is older.
           sudo apt-get update
           sudo apt-get install -y postgresql-common
-          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
           sudo apt-get install -y postgresql-client-18
           pg_dump --version
 
