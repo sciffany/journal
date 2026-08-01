@@ -1,0 +1,128 @@
+# Weekly Neon Postgres backup → S3 and/or GCS.
+#
+# Required secret:
+#   DIRECT_URL          Neon direct (non-pooled) connection string
+#
+# S3 (optional — set all three to enable):
+#   AWS_ACCESS_KEY_ID
+#   AWS_SECRET_ACCESS_KEY
+#   AWS_S3_BUCKET        e.g. my-journal-backups
+#   AWS_REGION          e.g. us-east-1 (defaults to us-east-1)
+#   AWS_S3_PREFIX       optional key prefix, e.g. neon/ (defaults to neon/)
+#
+# GCS (optional — set both to enable):
+#   GCP_SA_KEY          service account JSON key
+#   GCS_BUCKET          e.g. my-journal-backups
+#   GCS_PREFIX          optional object prefix, e.g. neon/ (defaults to neon/)
+#
+# At least one of S3 or GCS must be configured.
+
+name: Weekly DB Backup
+
+on:
+  schedule:
+    # Sundays at 06:00 UTC
+    - cron: "0 6 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Dump database
+        env:
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${DIRECT_URL:-}" ]; then
+            echo "::error::DIRECT_URL secret is not set"
+            exit 1
+          fi
+
+          TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+          DUMP_FILE="journal-${TIMESTAMP}.dump"
+          {
+            echo "DUMP_FILE=${DUMP_FILE}"
+            echo "TIMESTAMP=${TIMESTAMP}"
+          } >> "$GITHUB_ENV"
+
+          # Custom format is compressed and restore-friendly (pg_restore).
+          # Use DIRECT_URL — Neon's pooled endpoint is not suitable for pg_dump.
+          pg_dump "$DIRECT_URL" \
+            --format=custom \
+            --no-owner \
+            --no-acl \
+            --verbose \
+            --file="$DUMP_FILE"
+
+          ls -lh "$DUMP_FILE"
+          echo "Backup size: $(du -h "$DUMP_FILE" | cut -f1)"
+
+      - name: Upload to S3
+        if: ${{ secrets.AWS_S3_BUCKET != '' }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION || 'us-east-1' }}
+          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+          AWS_S3_PREFIX: ${{ secrets.AWS_S3_PREFIX || 'neon/' }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${AWS_ACCESS_KEY_ID:-}" ] || [ -z "${AWS_SECRET_ACCESS_KEY:-}" ]; then
+            echo "::error::AWS_S3_BUCKET is set but AWS credentials are missing"
+            exit 1
+          fi
+
+          KEY="${AWS_S3_PREFIX}${DUMP_FILE}"
+          aws s3 cp "$DUMP_FILE" "s3://${AWS_S3_BUCKET}/${KEY}" \
+            --only-show-errors \
+            --metadata "source=neon,created=${TIMESTAMP}"
+
+          echo "Uploaded s3://${AWS_S3_BUCKET}/${KEY}"
+
+      - name: Authenticate to Google Cloud
+        if: ${{ secrets.GCS_BUCKET != '' }}
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        if: ${{ secrets.GCS_BUCKET != '' }}
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Upload to GCS
+        if: ${{ secrets.GCS_BUCKET != '' }}
+        env:
+          GCS_BUCKET: ${{ secrets.GCS_BUCKET }}
+          GCS_PREFIX: ${{ secrets.GCS_PREFIX || 'neon/' }}
+        run: |
+          set -euo pipefail
+
+          OBJECT="${GCS_PREFIX}${DUMP_FILE}"
+          gcloud storage cp "$DUMP_FILE" "gs://${GCS_BUCKET}/${OBJECT}"
+
+          echo "Uploaded gs://${GCS_BUCKET}/${OBJECT}"
+
+      - name: Verify at least one upload target
+        env:
+          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+          GCS_BUCKET: ${{ secrets.GCS_BUCKET }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${AWS_S3_BUCKET:-}" ] && [ -z "${GCS_BUCKET:-}" ]; then
+            echo "::error::Configure AWS_S3_BUCKET and/or GCS_BUCKET secrets so the dump is uploaded"
+            exit 1
+          fi
