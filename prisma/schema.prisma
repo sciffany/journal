@@ -1,0 +1,24 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Entry {
+  id        String   @id @default(cuid())
+  date      DateTime @db.Date
+  type      String
+  title     String?
+  body      String?
+  metadata  Json?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt        @map("updated_at")
+
+  @@index([type, date(sort: Desc)])
+  @@index([date(sort: Desc)])
+  @@map("entries")
+}
