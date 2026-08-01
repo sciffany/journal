@@ -59,8 +59,8 @@ export default async function TypePage({ params, searchParams }: PageProps) {
         </Button>
       </div>
 
-      <EntryGrid entries={entries} />
       <Pagination page={page} totalPages={totalPages} hrefForPage={hrefForPage} />
+      <EntryGrid entries={entries} />
     </div>
   );
 }
