@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import type { Entry } from "@prisma/client";
 import { format } from "date-fns";
 import { ArrowDown, ArrowUp } from "lucide-react";
@@ -142,10 +141,7 @@ function SortableHead({
 }
 
 function RowLink({ entry }: { entry: Entry }) {
-  const searchParams = useSearchParams();
-  const params = new URLSearchParams(searchParams.toString());
-  params.set("e", entry.id);
-  const href = `?${params.toString()}`;
+  const href = `/${entry.type}/${entry.id}`;
   const preview = (entry.body ?? "").replace(/\s+/g, " ").trim();
   const stars =
     entry.type === "ratings" ? getStarsFromMetadata(entry.metadata) : null;
@@ -161,7 +157,7 @@ function RowLink({ entry }: { entry: Entry }) {
         </Link>
       </TableCell>
       <TableCell className="p-0">
-        <Link href={href} scroll={false} className="block px-4 py-4 font-medium">
+        <Link href={href} className="block px-4 py-4 font-medium">
           <span className="inline-flex items-center gap-2">
             {entry.title || (
               <span className="text-neutral-400 dark:text-neutral-500">
@@ -179,7 +175,6 @@ function RowLink({ entry }: { entry: Entry }) {
       <TableCell className="p-0">
         <Link
           href={href}
-          scroll={false}
           className="block truncate px-4 py-4 text-neutral-500 dark:text-neutral-400"
         >
           {preview || (
@@ -190,7 +185,7 @@ function RowLink({ entry }: { entry: Entry }) {
         </Link>
       </TableCell>
       <TableCell className="p-0 text-neutral-500 dark:text-neutral-400">
-        <Link href={href} scroll={false} className="block px-4 py-4">
+        <Link href={href} className="block px-4 py-4">
           {format(entry.updatedAt, "MMM d")}
         </Link>
       </TableCell>

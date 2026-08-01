@@ -2,33 +2,31 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Plus } from "lucide-react";
 import { EntryGrid } from "@/components/EntryGrid";
-import { EntryEditor } from "@/components/EntryEditor";
 import { Pagination } from "@/components/Pagination";
 import { Button } from "@/components/ui/button";
-import { getEntry, listByType } from "@/app/actions/entries";
+import { listByType } from "@/app/actions/entries";
 import { getEntryType } from "@/lib/types";
 
 const KNOWN_ROUTES = new Set(["day", "auth", "login", "actions", "import"]);
 
 type PageProps = {
   params: Promise<{ type: string }>;
-  searchParams: Promise<{ e?: string; page?: string }>;
+  searchParams: Promise<{ page?: string }>;
 };
 
 export default async function TypePage({ params, searchParams }: PageProps) {
   const { type } = await params;
-  const { e: activeId, page: pageParam } = await searchParams;
+  const { page: pageParam } = await searchParams;
 
   if (KNOWN_ROUTES.has(type)) notFound();
 
   const requestedPage = Math.max(1, Number.parseInt(pageParam ?? "1", 10) || 1);
 
   const typeInfo = getEntryType(type);
-  const [{ entries, total, page, pageSize, totalPages }, activeEntry] =
-    await Promise.all([
-      listByType(type, { page: requestedPage }),
-      activeId ? getEntry(activeId) : Promise.resolve(null),
-    ]);
+  const { entries, total, page, pageSize, totalPages } = await listByType(
+    type,
+    { page: requestedPage },
+  );
 
   const Icon = typeInfo.icon;
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
@@ -61,7 +59,6 @@ export default async function TypePage({ params, searchParams }: PageProps) {
 
       <EntryGrid entries={entries} />
       <Pagination page={page} totalPages={totalPages} hrefForPage={hrefForPage} />
-      <EntryEditor entry={activeEntry} />
     </div>
   );
 }

@@ -94,6 +94,7 @@ export async function updateEntry(
 
   revalidatePath("/");
   revalidatePath(`/${entry.type}`);
+  revalidatePath(`/${entry.type}/${entry.id}`);
   revalidatePath(`/day/${input.date}`);
   if (existing.type !== entry.type) revalidatePath(`/${existing.type}`);
 

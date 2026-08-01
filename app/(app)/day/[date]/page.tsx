@@ -3,26 +3,20 @@ import { notFound } from "next/navigation";
 import { format, parseISO } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { Entry } from "@prisma/client";
-import { getEntry, listByDate } from "@/app/actions/entries";
-import { EntryEditor } from "@/components/EntryEditor";
+import { listByDate } from "@/app/actions/entries";
 import { getEntryType } from "@/lib/types";
 import { isValidISODate, shiftISODate, todayISO } from "@/lib/utils";
 
 type PageProps = {
   params: Promise<{ date: string }>;
-  searchParams: Promise<{ e?: string }>;
 };
 
-export default async function DayPage({ params, searchParams }: PageProps) {
+export default async function DayPage({ params }: PageProps) {
   const { date } = await params;
-  const { e: activeId } = await searchParams;
 
   if (!isValidISODate(date)) notFound();
 
-  const [entries, activeEntry] = await Promise.all([
-    listByDate(date),
-    activeId ? getEntry(activeId) : Promise.resolve(null),
-  ]);
+  const entries = await listByDate(date);
 
   const parsed = parseISO(date);
   const prevDate = shiftISODate(date, -1);
@@ -97,8 +91,7 @@ export default async function DayPage({ params, searchParams }: PageProps) {
                     return (
                       <li key={entry.id}>
                         <Link
-                          href={`?e=${entry.id}`}
-                          scroll={false}
+                          href={`/${entry.type}/${entry.id}`}
                           className="block px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-900/50"
                         >
                           <div className="font-medium">
@@ -123,8 +116,6 @@ export default async function DayPage({ params, searchParams }: PageProps) {
           })}
         </div>
       )}
-
-      <EntryEditor entry={activeEntry} />
     </div>
   );
 }
