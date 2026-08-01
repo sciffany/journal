@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, Home, Upload } from "lucide-react";
+import { Activity, CalendarDays, Home, Upload } from "lucide-react";
 import { ENTRY_TYPES } from "@/lib/types";
 import { cn, todayISO } from "@/lib/utils";
 
@@ -42,6 +42,13 @@ export function Sidebar({ onNavigate, headerAction }: SidebarProps = {}) {
             active={pathname.startsWith("/day")}
             icon={<CalendarDays className="h-4 w-4" />}
             label="Today"
+            onNavigate={onNavigate}
+          />
+          <SidebarLink
+            href="/activities"
+            active={pathname.startsWith("/activities")}
+            icon={<Activity className="h-4 w-4" />}
+            label="Activities"
             onNavigate={onNavigate}
           />
           <SidebarLink

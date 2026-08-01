@@ -22,3 +22,39 @@ model Entry {
   @@index([date(sort: Desc)])
   @@map("entries")
 }
+
+model ActivityCategory {
+  id         String     @id @default(cuid())
+  name       String
+  slug       String     @unique
+  sortOrder  Int        @default(0) @map("sort_order")
+  activities Activity[]
+
+  @@map("activity_categories")
+}
+
+model Activity {
+  id         String           @id @default(cuid())
+  name       String
+  slug       String           @unique
+  sortOrder  Int              @default(0) @map("sort_order")
+  categoryId String           @map("category_id")
+  category   ActivityCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  entries    ActivityEntry[]
+
+  @@index([categoryId])
+  @@map("activities")
+}
+
+model ActivityEntry {
+  id         String   @id @default(cuid())
+  date       DateTime @db.Date
+  activityId String   @map("activity_id")
+  activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@unique([date, activityId])
+  @@index([date])
+  @@index([activityId, date])
+  @@map("activity_entries")
+}

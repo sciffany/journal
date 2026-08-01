@@ -7,7 +7,14 @@ import { Button } from "@/components/ui/button";
 import { listByType } from "@/app/actions/entries";
 import { getEntryType } from "@/lib/types";
 
-const KNOWN_ROUTES = new Set(["day", "auth", "login", "actions", "import"]);
+const KNOWN_ROUTES = new Set([
+  "day",
+  "auth",
+  "login",
+  "actions",
+  "import",
+  "activities",
+]);
 
 type PageProps = {
   params: Promise<{ type: string }>;

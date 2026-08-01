@@ -3,7 +3,12 @@ import { notFound } from "next/navigation";
 import { format, parseISO } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { Entry } from "@prisma/client";
+import {
+  listCategoriesWithActivities,
+  listEntriesForDate,
+} from "@/app/actions/activities";
 import { listByDate } from "@/app/actions/entries";
+import { ActivityLogger } from "@/components/ActivityLogger";
 import { getEntryType } from "@/lib/types";
 import { isValidISODate, shiftISODate, todayISO } from "@/lib/utils";
 
@@ -16,12 +21,17 @@ export default async function DayPage({ params }: PageProps) {
 
   if (!isValidISODate(date)) notFound();
 
-  const entries = await listByDate(date);
+  const [entries, categories, activityEntries] = await Promise.all([
+    listByDate(date),
+    listCategoriesWithActivities(),
+    listEntriesForDate(date),
+  ]);
 
   const parsed = parseISO(date);
   const prevDate = shiftISODate(date, -1);
   const nextDate = shiftISODate(date, 1);
   const isToday = date === todayISO();
+  const loggedActivityIds = activityEntries.map((e) => e.activityId);
 
   const groups = new Map<string, Entry[]>();
   for (const entry of entries) {
@@ -42,6 +52,13 @@ export default async function DayPage({ params }: PageProps) {
           </h1>
           <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
             {entries.length} {entries.length === 1 ? "entry" : "entries"}
+            {loggedActivityIds.length > 0 && (
+              <>
+                {" · "}
+                {loggedActivityIds.length}{" "}
+                {loggedActivityIds.length === 1 ? "activity" : "activities"}
+              </>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-1">
@@ -62,9 +79,36 @@ export default async function DayPage({ params }: PageProps) {
         </div>
       </div>
 
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+            Activities
+          </h2>
+          <Link
+            href="/activities"
+            className="text-xs text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
+          >
+            Manage
+          </Link>
+        </div>
+        <ActivityLogger
+          date={date}
+          categories={categories.map((c) => ({
+            id: c.id,
+            name: c.name,
+            activities: c.activities.map((a) => ({
+              id: a.id,
+              name: a.name,
+              slug: a.slug,
+            })),
+          }))}
+          loggedActivityIds={loggedActivityIds}
+        />
+      </section>
+
       {entries.length === 0 ? (
         <div className="rounded-lg border border-dashed border-neutral-300 py-16 text-center text-sm text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
-          Nothing recorded on this day.
+          No journal entries on this day.
         </div>
       ) : (
         <div className="space-y-6">
