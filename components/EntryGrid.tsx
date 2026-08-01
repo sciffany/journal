@@ -14,6 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { getStarsFromMetadata, RATING_MAX } from "@/lib/ratings";
 import { cn, formatDateISO } from "@/lib/utils";
 
 type SortKey = "date" | "title" | "updatedAt";
@@ -146,6 +147,8 @@ function RowLink({ entry }: { entry: Entry }) {
   params.set("e", entry.id);
   const href = `?${params.toString()}`;
   const preview = (entry.body ?? "").replace(/\s+/g, " ").trim();
+  const stars =
+    entry.type === "ratings" ? getStarsFromMetadata(entry.metadata) : null;
 
   return (
     <TableRow className="cursor-pointer">
@@ -159,11 +162,18 @@ function RowLink({ entry }: { entry: Entry }) {
       </TableCell>
       <TableCell className="p-0">
         <Link href={href} scroll={false} className="block px-4 py-4 font-medium">
-          {entry.title || (
-            <span className="text-neutral-400 dark:text-neutral-500">
-              (untitled)
-            </span>
-          )}
+          <span className="inline-flex items-center gap-2">
+            {entry.title || (
+              <span className="text-neutral-400 dark:text-neutral-500">
+                (untitled)
+              </span>
+            )}
+            {stars != null && (
+              <span className="text-xs font-normal tabular-nums text-amber-600 dark:text-amber-400">
+                {stars}/{RATING_MAX}
+              </span>
+            )}
+          </span>
         </Link>
       </TableCell>
       <TableCell className="p-0">

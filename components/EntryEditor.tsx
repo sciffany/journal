@@ -13,7 +13,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { StarRating } from "@/components/StarRating";
 import { deleteEntry, updateEntry } from "@/app/actions/entries";
+import {
+  getStarsFromMetadata,
+  mergeStarsIntoMetadata,
+  parseStarsFromMetadataRaw,
+} from "@/lib/ratings";
 import { formatDateISO } from "@/lib/utils";
 
 type Props = {
@@ -29,9 +35,12 @@ export function EntryEditor({ entry }: Props) {
   const [date, setDate] = useState("");
   const [body, setBody] = useState("");
   const [metadataRaw, setMetadataRaw] = useState("");
+  const [stars, setStars] = useState<number | null>(null);
   const [showMetadata, setShowMetadata] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+
+  const isRatings = entry?.type === "ratings";
 
   useEffect(() => {
     if (!entry) return;
@@ -43,9 +52,20 @@ export function EntryEditor({ entry }: Props) {
         ? JSON.stringify(entry.metadata, null, 2)
         : "",
     );
+    setStars(getStarsFromMetadata(entry.metadata));
     setShowMetadata(Boolean(entry.metadata));
     setError(null);
   }, [entry]);
+
+  function handleStarsChange(next: number | null) {
+    setStars(next);
+    setMetadataRaw((raw) => mergeStarsIntoMetadata(raw, next));
+  }
+
+  function handleMetadataChange(raw: string) {
+    setMetadataRaw(raw);
+    if (isRatings) setStars(parseStarsFromMetadataRaw(raw));
+  }
 
   function closeDialog() {
     const params = new URLSearchParams(searchParams.toString());
@@ -129,6 +149,14 @@ export function EntryEditor({ entry }: Props) {
                 </div>
               </div>
 
+              {isRatings && (
+                <StarRating
+                  value={stars}
+                  onChange={handleStarsChange}
+                  disabled={pending}
+                />
+              )}
+
               <div className="space-y-1.5">
                 <label htmlFor="body" className="text-xs font-medium">
                   Body
@@ -153,10 +181,10 @@ export function EntryEditor({ entry }: Props) {
                 {showMetadata && (
                   <Textarea
                     value={metadataRaw}
-                    onChange={(e) => setMetadataRaw(e.target.value)}
+                    onChange={(e) => handleMetadataChange(e.target.value)}
                     rows={5}
                     className="font-mono text-xs"
-                    placeholder='{"stars": 4}'
+                    placeholder='{"stars": 8}'
                   />
                 )}
               </div>

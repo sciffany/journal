@@ -6,6 +6,11 @@ import { createEntryFromForm } from "@/app/actions/entries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { StarRating } from "@/components/StarRating";
+import {
+  mergeStarsIntoMetadata,
+  parseStarsFromMetadataRaw,
+} from "@/lib/ratings";
 
 type Props = {
   type: string;
@@ -14,12 +19,28 @@ type Props = {
 };
 
 export function NewEntryForm({ type, defaultDate, placeholder }: Props) {
+  const isRatings = type === "ratings";
   const [showMetadata, setShowMetadata] = useState(false);
+  const [metadataRaw, setMetadataRaw] = useState("");
+  const [stars, setStars] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
+  function handleStarsChange(next: number | null) {
+    setStars(next);
+    setMetadataRaw((raw) => mergeStarsIntoMetadata(raw, next));
+  }
+
+  function handleMetadataChange(raw: string) {
+    setMetadataRaw(raw);
+    if (isRatings) setStars(parseStarsFromMetadataRaw(raw));
+  }
+
   async function handleSubmit(formData: FormData) {
     setError(null);
+    if (isRatings) {
+      formData.set("metadata", metadataRaw);
+    }
     startTransition(async () => {
       try {
         await createEntryFromForm(formData);
@@ -59,6 +80,14 @@ export function NewEntryForm({ type, defaultDate, placeholder }: Props) {
         </div>
       </div>
 
+      {isRatings && (
+        <StarRating
+          value={stars}
+          onChange={handleStarsChange}
+          disabled={pending}
+        />
+      )}
+
       <div className="space-y-1.5">
         <label htmlFor="body" className="text-xs font-medium">
           Body
@@ -81,11 +110,20 @@ export function NewEntryForm({ type, defaultDate, placeholder }: Props) {
         </button>
         {showMetadata && (
           <Textarea
-            name="metadata"
+            name={isRatings ? undefined : "metadata"}
+            value={isRatings ? metadataRaw : undefined}
+            onChange={
+              isRatings
+                ? (e) => handleMetadataChange(e.target.value)
+                : undefined
+            }
             rows={5}
             className="font-mono text-xs"
-            placeholder='{"stars": 4}'
+            placeholder='{"stars": 8}'
           />
+        )}
+        {isRatings && !showMetadata && (
+          <input type="hidden" name="metadata" value={metadataRaw} />
         )}
       </div>
 
