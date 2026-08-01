@@ -1,6 +1,6 @@
 import {
   BookOpen,
-  Film,
+  Star,
   Lightbulb,
   Sparkles,
   ListChecks,
@@ -24,10 +24,10 @@ export const ENTRY_TYPES: EntryType[] = [
     placeholder: "What happened today?",
   },
   {
-    slug: "movies",
-    label: "Movie Ratings",
-    icon: Film,
-    placeholder: "Movie title...",
+    slug: "ratings",
+    label: "Ratings",
+    icon: Star,
+    placeholder: "Title...",
   },
   {
     slug: "ideas",

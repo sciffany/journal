@@ -3,30 +3,40 @@ import { notFound } from "next/navigation";
 import { Plus } from "lucide-react";
 import { EntryGrid } from "@/components/EntryGrid";
 import { EntryEditor } from "@/components/EntryEditor";
+import { Pagination } from "@/components/Pagination";
 import { Button } from "@/components/ui/button";
 import { getEntry, listByType } from "@/app/actions/entries";
 import { getEntryType } from "@/lib/types";
 
-const KNOWN_ROUTES = new Set(["day", "auth", "login", "actions"]);
+const KNOWN_ROUTES = new Set(["day", "auth", "login", "actions", "import"]);
 
 type PageProps = {
   params: Promise<{ type: string }>;
-  searchParams: Promise<{ e?: string }>;
+  searchParams: Promise<{ e?: string; page?: string }>;
 };
 
 export default async function TypePage({ params, searchParams }: PageProps) {
   const { type } = await params;
-  const { e: activeId } = await searchParams;
+  const { e: activeId, page: pageParam } = await searchParams;
 
   if (KNOWN_ROUTES.has(type)) notFound();
 
+  const requestedPage = Math.max(1, Number.parseInt(pageParam ?? "1", 10) || 1);
+
   const typeInfo = getEntryType(type);
-  const [entries, activeEntry] = await Promise.all([
-    listByType(type),
-    activeId ? getEntry(activeId) : Promise.resolve(null),
-  ]);
+  const [{ entries, total, page, pageSize, totalPages }, activeEntry] =
+    await Promise.all([
+      listByType(type, { page: requestedPage }),
+      activeId ? getEntry(activeId) : Promise.resolve(null),
+    ]);
 
   const Icon = typeInfo.icon;
+  const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
+  const to = Math.min(page * pageSize, total);
+
+  function hrefForPage(p: number) {
+    return p <= 1 ? `/${type}` : `/${type}?page=${p}`;
+  }
 
   return (
     <div className="space-y-6">
@@ -37,7 +47,9 @@ export default async function TypePage({ params, searchParams }: PageProps) {
             {typeInfo.label}
           </h1>
           <span className="text-sm text-neutral-500 dark:text-neutral-400">
-            {entries.length} {entries.length === 1 ? "entry" : "entries"}
+            {total === 0
+              ? "0 entries"
+              : `${from}–${to} of ${total} ${total === 1 ? "entry" : "entries"}`}
           </span>
         </div>
         <Button asChild>
@@ -48,6 +60,7 @@ export default async function TypePage({ params, searchParams }: PageProps) {
       </div>
 
       <EntryGrid entries={entries} />
+      <Pagination page={page} totalPages={totalPages} hrefForPage={hrefForPage} />
       <EntryEditor entry={activeEntry} />
     </div>
   );

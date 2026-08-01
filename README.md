@@ -1,6 +1,6 @@
 # Journal
 
-A private, single-user daily notebook. Every entry (journal, movie rating, idea, todo, gratitude, etc.) lives in one `Entry` table and can be browsed as a per-type grid or a per-date view.
+A private, single-user daily notebook. Every entry (journal, rating, idea, todo, gratitude, etc.) lives in one `Entry` table and can be browsed as a per-type grid or a per-date view.
 
 **Stack:** Next.js 16 (App Router) · Neon (Postgres) · Prisma · Tailwind CSS · Vercel  
 **Auth:** Shared app password (signed cookie session)
@@ -65,7 +65,7 @@ The sidebar, home dashboard, grid, and day view all pick it up automatically. No
 
 - `/` — Home dashboard: tile per type with counts, plus a "Today" link
 - `/login` — Shared-password sign-in (only public route)
-- `/<type>` — Grid view for a type (e.g. `/journal`, `/movies`)
+- `/<type>` — Grid view for a type (e.g. `/journal`, `/ratings`)
 - `/<type>/new` — New entry form
 - `/<type>?e=<id>` — Grid view with the edit modal open
 - `/day/<YYYY-MM-DD>` — All entries on that date, grouped by type

@@ -4,7 +4,7 @@ import { NewEntryForm } from "./new-entry-form";
 import { getEntryType } from "@/lib/types";
 import { todayISO } from "@/lib/utils";
 
-const KNOWN_ROUTES = new Set(["day", "auth", "login", "actions"]);
+const KNOWN_ROUTES = new Set(["day", "auth", "login", "actions", "import"]);
 
 type PageProps = {
   params: Promise<{ type: string }>;

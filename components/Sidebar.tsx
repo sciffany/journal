@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, Home } from "lucide-react";
+import { CalendarDays, Home, Upload } from "lucide-react";
 import { ENTRY_TYPES } from "@/lib/types";
 import { cn, todayISO } from "@/lib/utils";
 
@@ -34,6 +34,12 @@ export function Sidebar() {
             active={pathname.startsWith("/day")}
             icon={<CalendarDays className='h-4 w-4' />}
             label='Today'
+          />
+          <SidebarLink
+            href='/import'
+            active={pathname === "/import"}
+            icon={<Upload className='h-4 w-4' />}
+            label='Import CSV'
           />
         </div>
 

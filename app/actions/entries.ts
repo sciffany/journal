@@ -114,21 +114,29 @@ export async function deleteEntry(id: string) {
   revalidatePath(`/day/${dateISO}`);
 }
 
+const PAGE_SIZE = 20;
+
 export async function listByType(
   type: string,
-  options: { limit?: number; cursor?: string } = {},
+  options: { page?: number; pageSize?: number } = {},
 ) {
   await requireSession();
 
-  const limit = options.limit ?? 100;
-  return prisma.entry.findMany({
+  const pageSize = options.pageSize ?? PAGE_SIZE;
+  const requestedPage = Math.max(1, options.page ?? 1);
+
+  const total = await prisma.entry.count({ where: { type } });
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const page = Math.min(requestedPage, totalPages);
+
+  const entries = await prisma.entry.findMany({
     where: { type },
     orderBy: [{ date: "desc" }, { createdAt: "desc" }],
-    take: limit,
-    ...(options.cursor
-      ? { skip: 1, cursor: { id: options.cursor } }
-      : {}),
+    take: pageSize,
+    skip: (page - 1) * pageSize,
   });
+
+  return { entries, total, page, pageSize, totalPages };
 }
 
 export async function listByDate(dateISO: string) {

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import type { Entry } from "@prisma/client";
 import { format } from "date-fns";
 import { ArrowDown, ArrowUp } from "lucide-react";
@@ -13,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { cn } from "@/lib/utils";
+import { cn, formatDateISO } from "@/lib/utils";
 
 type SortKey = "date" | "title" | "updatedAt";
 type SortDir = "asc" | "desc";
@@ -140,20 +141,24 @@ function SortableHead({
 }
 
 function RowLink({ entry }: { entry: Entry }) {
+  const searchParams = useSearchParams();
+  const params = new URLSearchParams(searchParams.toString());
+  params.set("e", entry.id);
+  const href = `?${params.toString()}`;
   const preview = (entry.body ?? "").replace(/\s+/g, " ").trim();
+
   return (
     <TableRow className="cursor-pointer">
       <TableCell className="p-0">
-        <Link href={`?e=${entry.id}`} scroll={false} className="block px-4 py-4">
+        <Link
+          href={`/day/${formatDateISO(entry.date)}`}
+          className="block px-4 py-4 text-neutral-600 underline-offset-4 hover:underline dark:text-neutral-300"
+        >
           {format(entry.date, "MMM d, yyyy")}
         </Link>
       </TableCell>
       <TableCell className="p-0">
-        <Link
-          href={`?e=${entry.id}`}
-          scroll={false}
-          className="block px-4 py-4 font-medium"
-        >
+        <Link href={href} scroll={false} className="block px-4 py-4 font-medium">
           {entry.title || (
             <span className="text-neutral-400 dark:text-neutral-500">
               (untitled)
@@ -163,7 +168,7 @@ function RowLink({ entry }: { entry: Entry }) {
       </TableCell>
       <TableCell className="p-0">
         <Link
-          href={`?e=${entry.id}`}
+          href={href}
           scroll={false}
           className="block truncate px-4 py-4 text-neutral-500 dark:text-neutral-400"
         >
@@ -175,7 +180,7 @@ function RowLink({ entry }: { entry: Entry }) {
         </Link>
       </TableCell>
       <TableCell className="p-0 text-neutral-500 dark:text-neutral-400">
-        <Link href={`?e=${entry.id}`} scroll={false} className="block px-4 py-4">
+        <Link href={href} scroll={false} className="block px-4 py-4">
           {format(entry.updatedAt, "MMM d")}
         </Link>
       </TableCell>
