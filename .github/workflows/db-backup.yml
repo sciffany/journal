@@ -1,21 +1,14 @@
-# Weekly Neon Postgres backup → S3 and/or GCS.
+# Weekly Neon Postgres backup → S3 (kept for 30 days).
 #
-# Required secret:
-#   DIRECT_URL          Neon direct (non-pooled) connection string
-#
-# S3 (optional — set all three to enable):
+# Required secrets:
+#   DIRECT_URL              Neon direct (non-pooled) connection string
 #   AWS_ACCESS_KEY_ID
 #   AWS_SECRET_ACCESS_KEY
-#   AWS_S3_BUCKET        e.g. my-journal-backups
-#   AWS_REGION          e.g. us-east-1 (defaults to us-east-1)
-#   AWS_S3_PREFIX       optional key prefix, e.g. neon/ (defaults to neon/)
+#   AWS_S3_BUCKET            e.g. my-journal-backups
 #
-# GCS (optional — set both to enable):
-#   GCP_SA_KEY          service account JSON key
-#   GCS_BUCKET          e.g. my-journal-backups
-#   GCS_PREFIX          optional object prefix, e.g. neon/ (defaults to neon/)
-#
-# At least one of S3 or GCS must be configured.
+# Optional secrets:
+#   AWS_REGION              e.g. us-east-1 (defaults to us-east-1)
+#   AWS_S3_PREFIX            key prefix, e.g. neon/ (defaults to neon/)
 
 name: Weekly DB Backup
 
@@ -67,10 +60,8 @@ jobs:
             --file="$DUMP_FILE"
 
           ls -lh "$DUMP_FILE"
-          echo "Backup size: $(du -h "$DUMP_FILE" | cut -f1)"
 
-      - name: Upload to S3
-        if: ${{ secrets.AWS_S3_BUCKET != '' }}
+      - name: Upload to S3 and prune old backups
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -80,49 +71,25 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [ -z "${AWS_ACCESS_KEY_ID:-}" ] || [ -z "${AWS_SECRET_ACCESS_KEY:-}" ]; then
-            echo "::error::AWS_S3_BUCKET is set but AWS credentials are missing"
+          if [ -z "${AWS_S3_BUCKET:-}" ] || [ -z "${AWS_ACCESS_KEY_ID:-}" ] || [ -z "${AWS_SECRET_ACCESS_KEY:-}" ]; then
+            echo "::error::AWS_S3_BUCKET, AWS_ACCESS_KEY_ID, and AWS_SECRET_ACCESS_KEY secrets are required"
             exit 1
           fi
 
           KEY="${AWS_S3_PREFIX}${DUMP_FILE}"
-          aws s3 cp "$DUMP_FILE" "s3://${AWS_S3_BUCKET}/${KEY}" \
-            --only-show-errors \
-            --metadata "source=neon,created=${TIMESTAMP}"
-
+          aws s3 cp "$DUMP_FILE" "s3://${AWS_S3_BUCKET}/${KEY}" --only-show-errors
           echo "Uploaded s3://${AWS_S3_BUCKET}/${KEY}"
 
-      - name: Authenticate to Google Cloud
-        if: ${{ secrets.GCS_BUCKET != '' }}
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
-
-      - name: Set up Cloud SDK
-        if: ${{ secrets.GCS_BUCKET != '' }}
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Upload to GCS
-        if: ${{ secrets.GCS_BUCKET != '' }}
-        env:
-          GCS_BUCKET: ${{ secrets.GCS_BUCKET }}
-          GCS_PREFIX: ${{ secrets.GCS_PREFIX || 'neon/' }}
-        run: |
-          set -euo pipefail
-
-          OBJECT="${GCS_PREFIX}${DUMP_FILE}"
-          gcloud storage cp "$DUMP_FILE" "gs://${GCS_BUCKET}/${OBJECT}"
-
-          echo "Uploaded gs://${GCS_BUCKET}/${OBJECT}"
-
-      - name: Verify at least one upload target
-        env:
-          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
-          GCS_BUCKET: ${{ secrets.GCS_BUCKET }}
-        run: |
-          set -euo pipefail
-
-          if [ -z "${AWS_S3_BUCKET:-}" ] && [ -z "${GCS_BUCKET:-}" ]; then
-            echo "::error::Configure AWS_S3_BUCKET and/or GCS_BUCKET secrets so the dump is uploaded"
-            exit 1
-          fi
+          # Delete dumps under the prefix older than 30 days.
+          CUTOFF="$(date -u -d '30 days ago' +%Y-%m-%dT%H:%M:%SZ)"
+          aws s3api list-objects-v2 \
+            --bucket "$AWS_S3_BUCKET" \
+            --prefix "$AWS_S3_PREFIX" \
+            --query "Contents[?LastModified<'${CUTOFF}'].Key" \
+            --output text \
+          | tr '\t' '\n' \
+          | while read -r old_key; do
+              [ -z "$old_key" ] || [ "$old_key" = "None" ] && continue
+              echo "Deleting s3://${AWS_S3_BUCKET}/${old_key}"
+              aws s3 rm "s3://${AWS_S3_BUCKET}/${old_key}" --only-show-errors
+            done
