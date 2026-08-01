@@ -29,12 +29,14 @@ jobs:
     steps:
       - name: Install PostgreSQL 18 client
         run: |
-          # Neon is on Postgres 18; Ubuntu's default postgresql-client is older.
+          # Neon is on Postgres 18; ubuntu-latest ships an older pg_dump on PATH.
           sudo apt-get update
           sudo apt-get install -y postgresql-common
           sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
           sudo apt-get install -y postgresql-client-18
-          pg_dump --version
+          # Prefer the versioned binary — /usr/bin/pg_dump stays at the runner's older client.
+          echo "/usr/lib/postgresql/18/bin" >> "$GITHUB_PATH"
+          /usr/lib/postgresql/18/bin/pg_dump --version
 
       - name: Dump database
         env:
