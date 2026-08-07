@@ -1,8 +1,6 @@
 import {
   BookOpen,
   Star,
-  Lightbulb,
-  Sparkles,
   ListChecks,
   Heart,
   StickyNote,
@@ -28,18 +26,6 @@ export const ENTRY_TYPES: EntryType[] = [
     label: "Ratings",
     icon: Star,
     placeholder: "Title...",
-  },
-  {
-    slug: "ideas",
-    label: "Ideas",
-    icon: Lightbulb,
-    placeholder: "A wild idea...",
-  },
-  {
-    slug: "concepts",
-    label: "Concepts",
-    icon: Sparkles,
-    placeholder: "A concept to remember...",
   },
   {
     slug: "todos",
