@@ -5,7 +5,7 @@ import { listLists } from "@/app/actions/lists";
 import { Button } from "@/components/ui/button";
 
 export default async function ListsPage() {
-  const lists = await listLists();
+  const lists = await listLists({ groupId: null });
 
   return (
     <div className="space-y-6">
@@ -56,20 +56,13 @@ export default async function ListsPage() {
                       {format(list.updatedAt, "MMM d")}
                     </span>
                   </div>
-                  <div className="mt-1 flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
-                    {list.group && (
-                      <span className="shrink-0 truncate font-medium text-neutral-600 dark:text-neutral-300">
-                        {list.group.name}
+                  <p className="mt-1 truncate text-xs text-neutral-500 dark:text-neutral-400">
+                    {preview || (
+                      <span className="text-neutral-300 dark:text-neutral-600">
+                        (empty)
                       </span>
                     )}
-                    <p className="min-w-0 truncate">
-                      {preview || (
-                        <span className="text-neutral-300 dark:text-neutral-600">
-                          (empty)
-                        </span>
-                      )}
-                    </p>
-                  </div>
+                  </p>
                 </Link>
               </li>
             );
