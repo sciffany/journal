@@ -56,13 +56,20 @@ export default async function ListsPage() {
                       {format(list.updatedAt, "MMM d")}
                     </span>
                   </div>
-                  <p className="mt-1 truncate text-xs text-neutral-500 dark:text-neutral-400">
-                    {preview || (
-                      <span className="text-neutral-300 dark:text-neutral-600">
-                        (empty)
+                  <div className="mt-1 flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
+                    {list.group && (
+                      <span className="shrink-0 truncate font-medium text-neutral-600 dark:text-neutral-300">
+                        {list.group.name}
                       </span>
                     )}
-                  </p>
+                    <p className="min-w-0 truncate">
+                      {preview || (
+                        <span className="text-neutral-300 dark:text-neutral-600">
+                          (empty)
+                        </span>
+                      )}
+                    </p>
+                  </div>
                 </Link>
               </li>
             );

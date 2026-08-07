@@ -15,6 +15,7 @@ const KNOWN_ROUTES = new Set([
   "import",
   "activities",
   "lists",
+  "groups",
 ]);
 
 type PageProps = {

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ListEditor } from "@/components/ListEditor";
+import { listGroups } from "@/app/actions/groups";
 import { getList } from "@/app/actions/lists";
 
 type PageProps = {
@@ -9,19 +10,29 @@ type PageProps = {
 
 export default async function ListPage({ params }: PageProps) {
   const { id } = await params;
-  const list = await getList(id);
+  const [list, groups] = await Promise.all([getList(id), listGroups()]);
   if (!list) notFound();
+
+  const backHref = list.group
+    ? `/groups/${list.group.id}`
+    : "/lists";
+  const backLabel = list.group
+    ? `Back to ${list.group.name}`
+    : "Back to Lists";
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <Link
-        href="/lists"
+        href={backHref}
         className="inline-block text-sm text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
       >
-        &larr; Back to Lists
+        &larr; {backLabel}
       </Link>
 
-      <ListEditor list={list} />
+      <ListEditor
+        list={list}
+        groups={groups.map((g) => ({ id: g.id, name: g.name }))}
+      />
     </div>
   );
 }

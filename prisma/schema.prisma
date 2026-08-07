@@ -59,12 +59,25 @@ model ActivityEntry {
   @@map("activity_entries")
 }
 
+model Group {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  lists     List[]
+
+  @@map("groups")
+}
+
 model List {
   id        String   @id @default(cuid())
   title     String
   body      String?
+  groupId   String?  @map("group_id")
+  group     Group?   @relation(fields: [groupId], references: [id], onDelete: SetNull)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  @@index([groupId])
   @@map("lists")
 }
