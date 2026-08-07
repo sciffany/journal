@@ -40,13 +40,18 @@ export function NewListForm() {
       <div className="space-y-1.5">
         <label htmlFor="body" className="text-xs font-medium">
           Contents
+          <span className="ml-1.5 font-normal text-neutral-500 dark:text-neutral-400">
+            (markdown)
+          </span>
         </label>
         <Textarea
           id="body"
           name="body"
           rows={16}
-          className="min-h-[240px] leading-relaxed sm:min-h-[400px]"
-          placeholder="Add items, notes, anything..."
+          className="min-h-[240px] font-mono text-sm leading-relaxed sm:min-h-[400px]"
+          placeholder={
+            "Markdown supported — try:\n\n- [ ] Todo item\n- Regular item\n\n## Section\nNotes go here..."
+          }
         />
       </div>
 
