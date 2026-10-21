@@ -5,6 +5,7 @@ import {
   getActivityBySlug,
   listEntryDatesForActivity,
 } from "@/app/actions/activities";
+import { ActivityColorPicker } from "@/components/ActivityColorPicker";
 import { DeleteActivityButton } from "@/components/ActivityDeleteButtons";
 import { ActivityHeatmap } from "@/components/ActivityHeatmap";
 import { shiftISODate, todayISO } from "@/lib/utils";
@@ -54,12 +55,18 @@ export default async function ActivityDetailPage({ params }: PageProps) {
         />
       </div>
 
+      <ActivityColorPicker activityId={activity.id} color={activity.color} />
+
       <section className="space-y-3">
         <h2 className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
           Past year
         </h2>
         <div className="rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
-          <ActivityHeatmap activeDates={activeDates} endDate={endDate} />
+          <ActivityHeatmap
+            activeDates={activeDates}
+            endDate={endDate}
+            color={activity.color}
+          />
         </div>
       </section>
     </div>

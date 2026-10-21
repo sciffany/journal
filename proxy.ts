@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE_NAME, verifySessionToken } from "@/lib/auth/token";
+import { todayPath } from "@/lib/utils";
 
 export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
@@ -11,13 +12,13 @@ export async function proxy(request: NextRequest) {
   if (!isAuthenticated && !isAuthRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    url.searchParams.set("next", path);
+    url.searchParams.set("next", path === "/" ? todayPath() : path);
     return NextResponse.redirect(url);
   }
 
   if (isAuthenticated && path === "/login") {
     const url = request.nextUrl.clone();
-    url.pathname = "/";
+    url.pathname = todayPath();
     url.searchParams.delete("next");
     return NextResponse.redirect(url);
   }

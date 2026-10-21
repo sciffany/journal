@@ -5,6 +5,7 @@ import {
   createActivityFromForm,
   createCategoryFromForm,
 } from "@/app/actions/activities";
+import { ActivityColorSwatches } from "@/components/ActivityColorSwatches";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -84,13 +85,24 @@ export function CreateCategoryButton() {
 
 export function CreateActivityButton({
   categories,
+  suggestedColor,
 }: {
   categories: CategoryOption[];
+  suggestedColor: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [color, setColor] = useState(suggestedColor);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const disabled = categories.length === 0;
+
+  function handleOpenChange(next: boolean) {
+    setOpen(next);
+    if (next) {
+      setColor(suggestedColor);
+      setError(null);
+    }
+  }
 
   function handleSubmit(formData: FormData) {
     setError(null);
@@ -107,7 +119,7 @@ export function CreateActivityButton({
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button type="button" size="sm" disabled={disabled}>
           New activity
@@ -150,6 +162,10 @@ export function CreateActivityButton({
                 </option>
               ))}
             </select>
+          </div>
+          <div className="space-y-1.5">
+            <div className="text-xs font-medium">Color</div>
+            <ActivityColorSwatches value={color} onChange={setColor} />
           </div>
           {error && (
             <p className="text-sm text-red-600 dark:text-red-400">{error}</p>

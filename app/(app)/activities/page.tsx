@@ -5,10 +5,17 @@ import {
   CreateCategoryButton,
 } from "@/components/ActivityCreateForms";
 import { DeleteCategoryButton } from "@/components/ActivityDeleteButtons";
+import { activityColor, nextActivityColor } from "@/lib/activity-colors";
+import { cn } from "@/lib/utils";
 
 export default async function ActivitiesPage() {
   const categories = await listCategoriesWithActivities();
   const categoryOptions = categories.map((c) => ({ id: c.id, name: c.name }));
+  const suggestedColor = nextActivityColor(
+    categories.flatMap((category) =>
+      category.activities.map((activity) => activity.color),
+    ),
+  );
   const totalActivities = categories.reduce(
     (sum, c) => sum + c.activities.length,
     0,
@@ -25,7 +32,10 @@ export default async function ActivitiesPage() {
         </div>
         <div className="flex items-center gap-2">
           <CreateCategoryButton />
-          <CreateActivityButton categories={categoryOptions} />
+          <CreateActivityButton
+            categories={categoryOptions}
+            suggestedColor={suggestedColor}
+          />
         </div>
       </div>
 
@@ -82,9 +92,17 @@ export default async function ActivitiesPage() {
                       <li key={activity.id}>
                         <Link
                           href={`/activities/${activity.slug}`}
-                          className="flex items-center justify-between px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-900/50"
+                          className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-900/50"
                         >
-                          <span className="font-medium">{activity.name}</span>
+                          <span className="flex min-w-0 items-center gap-2.5 font-medium">
+                            <span
+                              className={cn(
+                                "h-2.5 w-2.5 shrink-0 rounded-full",
+                                activityColor(activity.color).dot,
+                              )}
+                            />
+                            <span className="truncate">{activity.name}</span>
+                          </span>
                           <span className="text-sm tabular-nums text-neutral-500 dark:text-neutral-400">
                             {count} {count === 1 ? "day" : "days"}
                           </span>

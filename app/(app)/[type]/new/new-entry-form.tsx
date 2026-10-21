@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { createEntryFromForm } from "@/app/actions/entries";
+import { CopyCheck } from "@/components/CopyCheck";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,10 +17,17 @@ type Props = {
   type: string;
   defaultDate: string;
   placeholder?: string;
+  returnTo?: string;
 };
 
-export function NewEntryForm({ type, defaultDate, placeholder }: Props) {
+export function NewEntryForm({
+  type,
+  defaultDate,
+  placeholder,
+  returnTo,
+}: Props) {
   const isRatings = type === "ratings";
+  const isTodos = type === "todos";
   const [showMetadata, setShowMetadata] = useState(false);
   const [metadataRaw, setMetadataRaw] = useState("");
   const [stars, setStars] = useState<number | null>(null);
@@ -53,6 +61,7 @@ export function NewEntryForm({ type, defaultDate, placeholder }: Props) {
   return (
     <form action={handleSubmit} className="space-y-4">
       <input type="hidden" name="type" value={type} />
+      {returnTo && <input type="hidden" name="returnTo" value={returnTo} />}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto]">
         <div className="space-y-1.5">
@@ -89,9 +98,12 @@ export function NewEntryForm({ type, defaultDate, placeholder }: Props) {
       )}
 
       <div className="space-y-1.5">
-        <label htmlFor="body" className="text-xs font-medium">
-          Body
-        </label>
+        <div className="flex items-center justify-between gap-3">
+          <label htmlFor="body" className="text-xs font-medium">
+            Body
+          </label>
+          {isTodos && <CopyCheck />}
+        </div>
         <Textarea
           id="body"
           name="body"
@@ -136,7 +148,7 @@ export function NewEntryForm({ type, defaultDate, placeholder }: Props) {
           disabled={pending}
           className="flex-1 sm:flex-none"
         >
-          <Link href={`/${type}`}>Cancel</Link>
+          <Link href={returnTo ?? `/${type}`}>Cancel</Link>
         </Button>
         <Button type="submit" disabled={pending} className="flex-1 sm:flex-none">
           {pending ? "Saving..." : "Save"}

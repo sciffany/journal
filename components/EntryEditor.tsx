@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import type { Entry } from "@prisma/client";
+import { CopyCheck } from "@/components/CopyCheck";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ type Props = {
 export function EntryEditor({ entry }: Props) {
   const router = useRouter();
   const isRatings = entry.type === "ratings";
+  const isTodos = entry.type === "todos";
 
   const [title, setTitle] = useState(entry.title ?? "");
   const [date, setDate] = useState(formatDateISO(entry.date));
@@ -117,9 +119,12 @@ export function EntryEditor({ entry }: Props) {
       )}
 
       <div className="space-y-1.5">
-        <label htmlFor="body" className="text-xs font-medium">
-          Body
-        </label>
+        <div className="flex items-center justify-between gap-3">
+          <label htmlFor="body" className="text-xs font-medium">
+            Body
+          </label>
+          {isTodos && <CopyCheck />}
+        </div>
         <Textarea
           id="body"
           value={body}

@@ -1,3 +1,4 @@
+import { todayPath } from "@/lib/utils";
 import { LoginForm } from "./login-form";
 
 export const metadata = {
@@ -20,7 +21,7 @@ export default async function LoginPage({ searchParams }: PageProps) {
             Enter the password to open your private notebook.
           </p>
         </div>
-        <LoginForm next={next ?? "/"} />
+        <LoginForm next={next ?? todayPath()} />
       </div>
     </div>
   );

@@ -1,9 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import {
+  isActivityColor,
+  nextActivityColor,
+  type ActivityColorId,
+} from "@/lib/activity-colors";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/auth/session";
-import { formatDateISO, isValidISODate } from "@/lib/utils";
+import { formatDateISO, isValidISODate, shiftISODate } from "@/lib/utils";
 
 function parseDate(input: string): Date {
   if (!isValidISODate(input)) {
@@ -96,6 +101,7 @@ export async function createCategoryFromForm(formData: FormData) {
 export async function createActivity(input: {
   name: string;
   categoryId: string;
+  color?: string;
 }) {
   await requireSession();
 
@@ -108,6 +114,7 @@ export async function createActivity(input: {
   });
   if (!category) throw new Error("Category not found.");
 
+  const color = await resolveActivityColor(input.color);
   const slug = await uniqueActivitySlug(name);
   const maxOrder = await prisma.activity.aggregate({
     where: { categoryId: input.categoryId },
@@ -118,6 +125,7 @@ export async function createActivity(input: {
     data: {
       name,
       slug,
+      color,
       categoryId: input.categoryId,
       sortOrder: (maxOrder._max.sortOrder ?? -1) + 1,
     },
@@ -135,7 +143,42 @@ export async function createActivityFromForm(formData: FormData) {
 
   const name = String(formData.get("name") ?? "");
   const categoryId = String(formData.get("categoryId") ?? "");
-  await createActivity({ name, categoryId });
+  const color = String(formData.get("color") ?? "");
+  await createActivity({ name, categoryId, color });
+}
+
+export async function updateActivityColor(id: string, color: string) {
+  await requireSession();
+
+  if (!isActivityColor(color)) throw new Error("Pick a color from the palette.");
+
+  const existing = await prisma.activity.findUnique({ where: { id } });
+  if (!existing) throw new Error("Activity not found.");
+  if (existing.color === color) return existing;
+
+  const activity = await prisma.activity.update({
+    where: { id },
+    data: { color },
+  });
+
+  revalidatePath("/activities");
+  revalidatePath(`/activities/${activity.slug}`);
+  revalidatePath("/day", "layout");
+
+  return activity;
+}
+
+async function resolveActivityColor(input: string | undefined): Promise<ActivityColorId> {
+  const requested = input?.trim() ?? "";
+  if (requested) {
+    if (!isActivityColor(requested)) {
+      throw new Error("Pick a color from the palette.");
+    }
+    return requested;
+  }
+
+  const existing = await prisma.activity.findMany({ select: { color: true } });
+  return nextActivityColor(existing.map((activity) => activity.color));
 }
 
 export async function deleteActivity(id: string) {
@@ -254,4 +297,96 @@ export async function listEntryDatesForActivity(
   });
 
   return entries.map((e) => formatDateISO(e.date));
+}
+
+export async function listFrequentActivityIds(
+  endISO: string,
+  options: { days?: number; limit?: number } = {},
+) {
+  await requireSession();
+
+  const days = options.days ?? 28;
+  const limit = options.limit ?? 8;
+  const from = parseDate(shiftISODate(endISO, -(days - 1)));
+  const end = parseDate(endISO);
+  end.setUTCDate(end.getUTCDate() + 1);
+
+  const rows = await prisma.activityEntry.groupBy({
+    by: ["activityId"],
+    where: { date: { gte: from, lt: end } },
+    _count: { _all: true },
+  });
+
+  rows.sort((a, b) => b._count._all - a._count._all);
+  return rows.slice(0, limit).map((row) => row.activityId);
+}
+
+export async function summarizeActivityRange(fromISO: string, toISO: string) {
+  await requireSession();
+
+  const from = parseDate(fromISO);
+  const end = parseDate(toISO);
+  end.setUTCDate(end.getUTCDate() + 1);
+
+  const rows = await prisma.activityEntry.findMany({
+    where: { date: { gte: from, lt: end } },
+    select: {
+      date: true,
+      activity: { select: { id: true, name: true, color: true } },
+    },
+    orderBy: [
+      { activity: { category: { sortOrder: "asc" } } },
+      { activity: { sortOrder: "asc" } },
+      { activity: { name: "asc" } },
+    ],
+  });
+
+  const stampsByDate: Record<
+    string,
+    { id: string; name: string; color: string }[]
+  > = {};
+  for (const row of rows) {
+    const iso = formatDateISO(row.date);
+    const stamps = stampsByDate[iso] ?? [];
+    stamps.push({
+      id: row.activity.id,
+      name: row.activity.name,
+      color: row.activity.color,
+    });
+    stampsByDate[iso] = stamps;
+  }
+
+  return {
+    count: rows.length,
+    dates: Object.keys(stampsByDate),
+    stampsByDate,
+  };
+}
+
+export async function copyActivityEntriesFromDate(
+  fromISO: string,
+  toISO: string,
+) {
+  await requireSession();
+
+  if (fromISO === toISO) return;
+
+  const fromDate = parseDate(fromISO);
+  const toDate = parseDate(toISO);
+  const source = await prisma.activityEntry.findMany({
+    where: { date: fromDate },
+    select: { activityId: true },
+  });
+  if (source.length === 0) return;
+
+  await prisma.activityEntry.createMany({
+    data: source.map((entry) => ({
+      date: toDate,
+      activityId: entry.activityId,
+    })),
+    skipDuplicates: true,
+  });
+
+  revalidatePath(`/day/${toISO}`);
+  revalidatePath("/activities");
 }

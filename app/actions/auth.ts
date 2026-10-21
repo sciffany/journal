@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { setSessionCookie } from "@/lib/auth/session";
 import { timingSafeEqual } from "@/lib/auth/token";
+import { todayPath } from "@/lib/utils";
 
 export type LoginState = {
   error?: string;
@@ -16,7 +17,9 @@ export async function login(
   const rawNext = String(formData.get("next") ?? "").trim();
   // Only allow same-origin relative paths (block open redirects).
   const next =
-    rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/";
+    rawNext.startsWith("/") && !rawNext.startsWith("//")
+      ? rawNext
+      : todayPath();
 
   const expected = process.env.APP_PASSWORD;
   if (!expected) {

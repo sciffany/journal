@@ -31,3 +31,20 @@ export function todayISO(): string {
 export function isValidISODate(input: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(input) && !Number.isNaN(Date.parse(input));
 }
+
+/** Monday (UTC calendar) of the ISO week containing `iso`. */
+export function startOfWeekMonday(iso: string): string {
+  const day = new Date(`${iso}T00:00:00.000Z`).getUTCDay();
+  const daysFromMonday = day === 0 ? 6 : day - 1;
+  return shiftISODate(iso, -daysFromMonday);
+}
+
+/** Monday–Sunday dates for the week containing `iso`. */
+export function weekDates(iso: string): string[] {
+  const start = startOfWeekMonday(iso);
+  return Array.from({ length: 7 }, (_, i) => shiftISODate(start, i));
+}
+
+export function todayPath(): string {
+  return `/day/${todayISO()}`;
+}

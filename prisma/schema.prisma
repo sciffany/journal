@@ -37,6 +37,7 @@ model Activity {
   id         String           @id @default(cuid())
   name       String
   slug       String           @unique
+  color      String           @default("rose")
   sortOrder  Int              @default(0) @map("sort_order")
   categoryId String           @map("category_id")
   category   ActivityCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)

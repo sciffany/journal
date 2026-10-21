@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { activityColor } from "@/lib/activity-colors";
 import { cn, shiftISODate } from "@/lib/utils";
 
 type Props = {
@@ -6,6 +7,8 @@ type Props = {
   activeDates: string[];
   /** End of the heatmap window (inclusive), typically today */
   endDate: string;
+  /** Palette id for filled days */
+  color?: string;
   /** Number of days to show ending at endDate (default ~1 year) */
   days?: number;
 };
@@ -36,9 +39,11 @@ function utcMonth(iso: string): number {
 export function ActivityHeatmap({
   activeDates,
   endDate,
+  color,
   days = 371,
 }: Props) {
   const active = new Set(activeDates);
+  const tone = activityColor(color ?? "rose").cell;
   const start = shiftISODate(endDate, -(days - 1));
 
   // Align columns to weeks starting Sunday (GitHub-style)
@@ -126,7 +131,7 @@ export function ActivityHeatmap({
                       className={cn(
                         "h-[11px] w-[11px] rounded-[2px] transition-colors",
                         on
-                          ? "bg-neutral-800 hover:bg-neutral-950 dark:bg-neutral-200 dark:hover:bg-white"
+                          ? tone
                           : "bg-neutral-200/80 hover:bg-neutral-300 dark:bg-neutral-800 dark:hover:bg-neutral-700",
                       )}
                     />
@@ -139,7 +144,7 @@ export function ActivityHeatmap({
         <div className="mt-2 flex items-center justify-end gap-1.5 text-[10px] text-neutral-500 dark:text-neutral-400">
           <span>Less</span>
           <span className="h-[11px] w-[11px] rounded-[2px] bg-neutral-200/80 dark:bg-neutral-800" />
-          <span className="h-[11px] w-[11px] rounded-[2px] bg-neutral-800 dark:bg-neutral-200" />
+          <span className={cn("h-[11px] w-[11px] rounded-[2px]", tone)} />
           <span>More</span>
         </div>
       </div>

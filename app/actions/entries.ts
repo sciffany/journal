@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/auth/session";
-import { isValidISODate } from "@/lib/utils";
+import { formatDateISO, isValidISODate } from "@/lib/utils";
 
 function parseDate(input: string): Date {
   if (!isValidISODate(input)) {
@@ -69,7 +69,17 @@ export async function createEntryFromForm(formData: FormData) {
 
   await createEntry({ type, date, title, body, metadata });
 
-  redirect(`/${type}`);
+  const returnTo = safeReturnTo(formData.get("returnTo"));
+  redirect(returnTo ?? `/${type}`);
+}
+
+function safeReturnTo(raw: FormDataEntryValue | null): string | null {
+  if (typeof raw !== "string") return null;
+  const path = raw.trim();
+  if (!path.startsWith("/") || path.startsWith("//") || path.includes("://")) {
+    return null;
+  }
+  return path;
 }
 
 export async function updateEntry(
@@ -171,4 +181,37 @@ export async function countByType() {
     map.set(row.type, row._count._all);
   }
   return map;
+}
+
+function inclusiveRange(fromISO: string, toISO: string) {
+  const start = parseDate(fromISO);
+  const end = parseDate(toISO);
+  end.setUTCDate(end.getUTCDate() + 1);
+  return { start, end };
+}
+
+export async function countByTypeInRange(fromISO: string, toISO: string) {
+  await requireSession();
+  const { start, end } = inclusiveRange(fromISO, toISO);
+  const rows = await prisma.entry.groupBy({
+    by: ["type"],
+    where: { date: { gte: start, lt: end } },
+    _count: { _all: true },
+  });
+  const map = new Map<string, number>();
+  for (const row of rows) {
+    map.set(row.type, row._count._all);
+  }
+  return map;
+}
+
+export async function listEntryDatesInRange(fromISO: string, toISO: string) {
+  await requireSession();
+  const { start, end } = inclusiveRange(fromISO, toISO);
+  const rows = await prisma.entry.findMany({
+    where: { date: { gte: start, lt: end } },
+    select: { date: true },
+    distinct: ["date"],
+  });
+  return rows.map((row) => formatDateISO(row.date));
 }
